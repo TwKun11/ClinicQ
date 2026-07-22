@@ -13,7 +13,7 @@ target/
 
 # Node / Angular
 node_modules/
-.angular/cache/
+.angular/
 dist/
 coverage/
 
