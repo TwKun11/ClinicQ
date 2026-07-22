@@ -7,7 +7,6 @@ import { ApiResponse } from '../models/api-response.model';
 
 export interface AuthResponse {
   accessToken: string;
-  refreshToken: string;
   username: string;
   role: string;
 }
@@ -19,7 +18,7 @@ export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
 
   login(credentials: { username: string; password: string }): Observable<ApiResponse<AuthResponse>> {
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, credentials).pipe(
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, credentials, { withCredentials: true }).pipe(
       tap(res => {
         if (res.success && res.data) {
           this.storeTokens(res.data);
@@ -29,7 +28,7 @@ export class AuthService {
   }
 
   register(data: { username: string; email: string; password: string; fullName: string }): Observable<ApiResponse<AuthResponse>> {
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, data).pipe(
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, data, { withCredentials: true }).pipe(
       tap(res => {
         if (res.success && res.data) {
           this.storeTokens(res.data);
@@ -39,11 +38,26 @@ export class AuthService {
   }
 
   logout(): void {
+    this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true }).subscribe();
+    this.clearLocalAuth();
+    this.router.navigate(['/login']);
+  }
+
+  refreshToken(): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/refresh`, {}, { withCredentials: true }).pipe(
+      tap(res => {
+        if (res.success && res.data) {
+          this.storeTokens(res.data);
+        }
+      })
+    );
+  }
+
+  clearLocalAuth(): void {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('username');
     localStorage.removeItem('role');
-    this.router.navigate(['/login']);
   }
 
   getToken(): string | null {
@@ -64,7 +78,6 @@ export class AuthService {
 
   private storeTokens(auth: AuthResponse): void {
     localStorage.setItem('access_token', auth.accessToken);
-    localStorage.setItem('refresh_token', auth.refreshToken);
     localStorage.setItem('username', auth.username);
     localStorage.setItem('role', auth.role);
   }
