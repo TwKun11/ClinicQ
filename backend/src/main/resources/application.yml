@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/${DB_NAME:training_db}
     username: ${DB_USER:postgres}
-    password: ${DB_PASS:11111111}
+    password: ${DB_PASS:postgres}
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20

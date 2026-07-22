@@ -19,6 +19,23 @@ Full-stack starter codebase for fresher training program. Includes JWT authentic
 - Node.js 18+ and npm
 - Docker & Docker Compose
 
+### Optional: Install GSD Core For Codex
+
+GSD Core runtime files are generated locally and are intentionally ignored by Git.
+After cloning or pulling this repository, install the local Codex runtime with:
+
+```bash
+scripts/install-gsd-codex.cmd
+```
+
+This runs the official installer:
+
+```bash
+npx --yes @opengsd/gsd-core@latest --codex --local
+```
+
+Restart Codex after installation.
+
 ### 1. Start Infrastructure
 
 ```bash
