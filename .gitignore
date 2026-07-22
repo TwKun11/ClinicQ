@@ -1,6 +1,12 @@
 # IDE
 .idea/
+.vscode/
 *.iml
+
+# AI/runtime artifacts
+.codex/
+.claude/
+.gsd/
 
 # Java / Maven
 target/
@@ -9,10 +15,20 @@ target/
 node_modules/
 .angular/cache/
 dist/
+coverage/
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Environment
 .env
 .env.*
+
+# OS / local temp
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
