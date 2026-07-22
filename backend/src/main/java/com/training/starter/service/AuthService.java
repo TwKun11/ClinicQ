@@ -1,15 +1,17 @@
 package com.training.starter.service;
 
 import com.training.starter.dto.request.LoginRequest;
-import com.training.starter.dto.request.RefreshTokenRequest;
 import com.training.starter.dto.request.RegisterRequest;
 import com.training.starter.dto.response.AuthResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public interface AuthService {
 
-    AuthResponse register(RegisterRequest request);
+    AuthResponse register(RegisterRequest request, HttpServletResponse response);
 
-    AuthResponse login(LoginRequest request);
+    AuthResponse login(LoginRequest request, HttpServletResponse response);
 
-    AuthResponse refreshToken(RefreshTokenRequest request);
+    AuthResponse refreshToken(String refreshToken, HttpServletResponse response);
+
+    void logout(String refreshToken, String accessToken, HttpServletResponse response);
 }

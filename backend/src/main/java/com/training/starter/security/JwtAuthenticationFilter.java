@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.training.starter.service.AccessTokenBlacklistStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
+    private final AccessTokenBlacklistStore accessTokenBlacklistStore;
 
     @Override
     protected void doFilterInternal(
@@ -32,7 +34,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String jwt = extractJwtFromRequest(request);
 
-        if (StringUtils.hasText(jwt) && jwtTokenProvider.isTokenValid(jwt)) {
+        if (StringUtils.hasText(jwt)
+                && jwtTokenProvider.isAccessTokenValid(jwt)
+                && !accessTokenBlacklistStore.contains(jwt)) {
             String username = jwtTokenProvider.extractUsername(jwt);
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
