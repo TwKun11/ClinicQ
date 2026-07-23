@@ -17,13 +17,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -132,6 +137,32 @@ class AppointmentServiceTest {
         appointmentService.delete(1L);
 
         verify(appointmentRepository).delete(appointment);
+    }
+
+    @Test
+    void search_withFilters_usesRepositorySpecificationAndPageable() {
+        var scheduledAt = LocalDateTime.now().plusDays(1);
+        var pageable = PageRequest.of(0, 20);
+        var appointment = buildAppointment(1L, buildPatient(1L), scheduledAt, AppointmentStatus.SCHEDULED);
+        var response = buildResponse(1L, 1L, scheduledAt, "SCHEDULED");
+
+        when(appointmentRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(appointment), pageable, 1));
+        when(appointmentMapper.toResponse(appointment)).thenReturn(response);
+
+        var result = appointmentService.search(scheduledAt.toLocalDate(), 1L, "scheduled", pageable);
+
+        assertThat(result.getContent()).containsExactly(response);
+        verify(appointmentRepository).findAll(any(Specification.class), eq(pageable));
+    }
+
+    @Test
+    void search_invalidStatus_throwsBadRequestException() {
+        var pageable = PageRequest.of(0, 20);
+
+        assertThatThrownBy(() -> appointmentService.search(null, null, "waiting", pageable))
+                .isInstanceOf(BadRequestException.class);
+        verify(appointmentRepository, never()).findAll(any(Specification.class), eq(pageable));
     }
 
     private Patient buildPatient(Long id) {

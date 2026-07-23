@@ -6,9 +6,13 @@ import com.training.starter.dto.response.AppointmentResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
+
 public interface AppointmentService {
 
     Page<AppointmentResponse> getAll(Pageable pageable);
+
+    Page<AppointmentResponse> search(LocalDate date, Long patientId, String status, Pageable pageable);
 
     AppointmentResponse getById(Long id);
 

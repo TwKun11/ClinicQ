@@ -10,6 +10,8 @@ public interface PatientService {
 
     Page<PatientResponse> getAll(Pageable pageable);
 
+    Page<PatientResponse> search(String search, Pageable pageable);
+
     PatientResponse getById(Long id);
 
     PatientResponse create(CreatePatientRequest request);
