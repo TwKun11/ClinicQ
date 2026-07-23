@@ -27,6 +27,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final AccessTokenBlacklistStore accessTokenBlacklistStore;
 
     @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.equals("/actuator/health") || path.startsWith("/actuator/health/");
+    }
+
+    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
