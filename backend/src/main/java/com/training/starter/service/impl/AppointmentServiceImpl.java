@@ -11,12 +11,15 @@ import com.training.starter.exception.ResourceNotFoundException;
 import com.training.starter.mapper.AppointmentMapper;
 import com.training.starter.repository.AppointmentRepository;
 import com.training.starter.repository.PatientRepository;
+import com.training.starter.repository.specification.AppointmentSpecifications;
 import com.training.starter.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,14 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional(readOnly = true)
     public Page<AppointmentResponse> getAll(Pageable pageable) {
         return appointmentRepository.findAll(pageable).map(appointmentMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AppointmentResponse> search(LocalDate date, Long patientId, String status, Pageable pageable) {
+        AppointmentStatus appointmentStatus = resolveStatus(status, null);
+        return appointmentRepository.findAll(AppointmentSpecifications.matchesFilters(date, patientId, appointmentStatus), pageable)
+                .map(appointmentMapper::toResponse);
     }
 
     @Override
@@ -100,4 +111,5 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new BadRequestException("Invalid appointment status: " + value);
         }
     }
+
 }

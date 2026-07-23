@@ -4,10 +4,12 @@ import com.training.starter.dto.request.CreatePatientRequest;
 import com.training.starter.dto.request.UpdatePatientRequest;
 import com.training.starter.dto.response.PatientResponse;
 import com.training.starter.entity.Patient;
+import com.training.starter.exception.BadRequestException;
 import com.training.starter.exception.DuplicateResourceException;
 import com.training.starter.exception.ResourceNotFoundException;
 import com.training.starter.mapper.PatientMapper;
 import com.training.starter.repository.PatientRepository;
+import com.training.starter.repository.specification.PatientSpecifications;
 import com.training.starter.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,14 @@ public class PatientServiceImpl implements PatientService {
     @Transactional(readOnly = true)
     public Page<PatientResponse> getAll(Pageable pageable) {
         return patientRepository.findAll(pageable).map(patientMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PatientResponse> search(String search, Pageable pageable) {
+        validateSearch(search);
+        return patientRepository.findAll(PatientSpecifications.matchesSearch(search), pageable)
+                .map(patientMapper::toResponse);
     }
 
     @Override
@@ -75,5 +85,15 @@ public class PatientServiceImpl implements PatientService {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient", id));
         patientRepository.delete(patient);
+    }
+
+    private void validateSearch(String search) {
+        if (search == null || search.isBlank()) {
+            return;
+        }
+        int length = search.trim().length();
+        if (length < 3 || length > 100) {
+            throw new BadRequestException("Search must be between 3 and 100 characters");
+        }
     }
 }
