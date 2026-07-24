@@ -9,7 +9,7 @@ export interface Doctor {
   id: number;
   userId?: number;
   fullName: string;
-  email: string;
+  email?: string;
   specialty: string;
   roomNumber: string;
   maxPatientsPerDay: number;
@@ -18,10 +18,10 @@ export interface Doctor {
 }
 
 export interface DoctorPayload {
-  userId: number;
-  specialty: string;
-  roomNumber: string;
-  maxPatientsPerDay: number;
+  userId?: number;
+  specialty?: string;
+  roomNumber?: string;
+  maxPatientsPerDay?: number;
   active?: boolean;
 }
 
@@ -71,10 +71,10 @@ export class DoctorService {
   }
 
   deactivate(id: number): Observable<ApiResponse<Doctor>> {
-    return this.http.patch<ApiResponse<Doctor>>(`${this.adminUrl}/${id}/deactivate`, {});
+    return this.update(id, { active: false });
   }
 
   activate(id: number): Observable<ApiResponse<Doctor>> {
-    return this.http.patch<ApiResponse<Doctor>>(`${this.adminUrl}/${id}/activate`, {});
+    return this.update(id, { active: true });
   }
 }

@@ -197,8 +197,8 @@ export class DoctorFormComponent implements OnInit {
           });
           this.selectedUser = {
             id: doctor.userId || 0,
-            username: doctor.email,
-            email: doctor.email,
+            username: doctor.email || String(doctor.userId || ''),
+            email: doctor.email || '',
             fullName: doctor.fullName,
             role: 'STAFF',
             active: doctor.active,

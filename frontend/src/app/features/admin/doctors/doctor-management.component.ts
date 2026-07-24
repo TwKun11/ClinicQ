@@ -86,7 +86,7 @@ import { Doctor, DoctorService } from './doctor.service';
                     <td>
                       <div class="doctor-cell">
                         <span class="avatar">{{ initials(doctor.fullName) }}</span>
-                        <div><strong>{{ doctor.fullName }}</strong><small>{{ doctor.email }}</small></div>
+                        <div><strong>{{ doctor.fullName }}</strong><small>{{ doctor.email || ('User ID: ' + doctor.userId) }}</small></div>
                       </div>
                     </td>
                     <td>{{ doctor.specialty }}</td>
@@ -227,7 +227,7 @@ export class DoctorManagementComponent implements OnInit {
     const header = ['Full name', 'Email', 'Specialty', 'Room', 'Max patients/day', 'Active'];
     const rows = this.doctors.map(doctor => [
       doctor.fullName,
-      doctor.email,
+      doctor.email || doctor.userId || '',
       doctor.specialty,
       doctor.roomNumber,
       doctor.maxPatientsPerDay,

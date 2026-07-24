@@ -18,7 +18,7 @@ import { Doctor, DoctorService } from './doctor.service';
           <span class="avatar">{{ initials(doctor.fullName) }}</span>
           <div>
             <h1>{{ doctor.fullName }}</h1>
-            <p>{{ doctor.email }}</p>
+            <p>{{ doctor.email || ('User ID: ' + doctor.userId) }}</p>
           </div>
           <a class="edit-button" [routerLink]="['/doctors', doctor.id, 'edit']"><mat-icon>edit</mat-icon>Chỉnh sửa</a>
         </header>
