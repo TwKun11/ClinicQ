@@ -1,16 +1,20 @@
 package com.training.starter.security;
 
 import com.training.starter.controller.AppointmentController;
+import com.training.starter.controller.DoctorController;
 import com.training.starter.controller.PatientController;
 import com.training.starter.controller.UserController;
 import com.training.starter.dto.request.CreateAppointmentRequest;
+import com.training.starter.dto.request.CreateDoctorRequest;
 import com.training.starter.dto.request.CreatePatientRequest;
 import com.training.starter.dto.request.CreateUserRequest;
 import com.training.starter.dto.response.AppointmentResponse;
+import com.training.starter.dto.response.DoctorResponse;
 import com.training.starter.dto.response.PatientResponse;
 import com.training.starter.dto.response.UserResponse;
 import com.training.starter.service.AccessTokenBlacklistStore;
 import com.training.starter.service.AppointmentService;
+import com.training.starter.service.DoctorService;
 import com.training.starter.service.PatientService;
 import com.training.starter.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -37,7 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {
         UserController.class,
         PatientController.class,
-        AppointmentController.class
+        AppointmentController.class,
+        DoctorController.class
 })
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class ApiAuthorizationTest {
@@ -53,6 +58,9 @@ class ApiAuthorizationTest {
 
     @MockBean
     private AppointmentService appointmentService;
+
+    @MockBean
+    private DoctorService doctorService;
 
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
@@ -88,7 +96,7 @@ class ApiAuthorizationTest {
     @Test
     @WithMockUser(roles = "USER")
     void userCanOnlyReadPatients() throws Exception {
-        when(patientService.getAll(any())).thenReturn(new PageImpl<>(List.of(patientResponse())));
+        when(patientService.search(any(), any())).thenReturn(new PageImpl<>(List.of(patientResponse())));
 
         mockMvc.perform(get("/api/v1/patients"))
                 .andExpect(status().isOk());
@@ -113,7 +121,7 @@ class ApiAuthorizationTest {
     @Test
     @WithMockUser(roles = "USER")
     void userCanOnlyReadAppointments() throws Exception {
-        when(appointmentService.getAll(any())).thenReturn(new PageImpl<>(List.of(appointmentResponse())));
+        when(appointmentService.search(any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(appointmentResponse())));
 
         mockMvc.perform(get("/api/v1/appointments"))
                 .andExpect(status().isOk());
@@ -133,6 +141,34 @@ class ApiAuthorizationTest {
                 .andExpect(status().isCreated());
     }
 
+    @Test
+    void anonymousCanReadDoctors() throws Exception {
+        when(doctorService.getAll(any(), any())).thenReturn(new PageImpl<>(List.of(doctorResponse())));
+
+        mockMvc.perform(get("/api/v1/doctors"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void userCannotCreateDoctor() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/doctors")
+                        .contentType("application/json")
+                        .content(createDoctorJson()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void adminCanCreateDoctor() throws Exception {
+        when(doctorService.create(any(CreateDoctorRequest.class))).thenReturn(doctorResponse());
+
+        mockMvc.perform(post("/api/v1/admin/doctors")
+                        .contentType("application/json")
+                        .content(createDoctorJson()))
+                .andExpect(status().isCreated());
+    }
+
     private UserResponse userResponse() {
         return new UserResponse(1L, "admin", "admin@example.com", "Admin", "ADMIN", true,
                 LocalDateTime.now());
@@ -146,6 +182,11 @@ class ApiAuthorizationTest {
     private AppointmentResponse appointmentResponse() {
         return new AppointmentResponse(1L, 1L, "Nguyen Van A", LocalDateTime.now().plusDays(1),
                 "Consultation", "SCHEDULED", null, LocalDateTime.now());
+    }
+
+    private DoctorResponse doctorResponse() {
+        return new DoctorResponse(1L, 10L, "Dr. Lisa Martin", "Cardiology", "A101",
+                24, true, LocalDateTime.now());
     }
 
     private String createPatientJson() {
@@ -170,6 +211,18 @@ class ApiAuthorizationTest {
                   "reason": "Consultation",
                   "status": "SCHEDULED",
                   "note": null
+                }
+                """;
+    }
+
+    private String createDoctorJson() {
+        return """
+                {
+                  "userId": 10,
+                  "specialty": "Cardiology",
+                  "roomNumber": "A101",
+                  "maxPatientsPerDay": 24,
+                  "active": true
                 }
                 """;
     }
