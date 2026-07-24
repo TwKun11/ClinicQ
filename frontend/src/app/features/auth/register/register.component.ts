@@ -1,9 +1,8 @@
 import { Component } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -17,92 +16,138 @@ function passwordsMatch(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
+  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, MatCheckboxModule, MatIconModule],
   template: `
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <mat-form-field class="full-width">
-        <mat-label>Username</mat-label>
-        <input matInput formControlName="username">
-      </mat-form-field>
+    <main class="register-page">
+      <header class="site-header">
+        <a class="brand" routerLink="/login" aria-label="YouMed">
+          <span class="brand-mark">Y</span>
+          <span class="brand-you">You</span><span class="brand-med">Med</span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="#">Đặt khám <span class="chevron">⌄</span></a>
+          <a href="#">Tư vấn trực tuyến</a>
+          <a href="#">Tin Y tế</a>
+          <a href="#">Trợ lý y khoa</a>
+        </nav>
+        <a class="outline-login" routerLink="/login">Đăng nhập</a>
+      </header>
 
-      <mat-form-field class="full-width">
-        <mat-label>Email</mat-label>
-        <input matInput type="email" formControlName="email">
-      </mat-form-field>
-
-      <mat-form-field class="full-width">
-        <mat-label>Full Name</mat-label>
-        <input matInput formControlName="fullName">
-      </mat-form-field>
-
-      <mat-form-field class="full-width">
-        <mat-label>Password</mat-label>
-        <input matInput type="password" formControlName="password">
-      </mat-form-field>
-
-      <div class="password-rules" aria-live="polite">
-        <div class="password-rule" [class.valid]="hasMinLength" [class.invalid]="!hasMinLength">
-          <mat-icon>{{ hasMinLength ? 'check_circle' : 'cancel' }}</mat-icon>
-          <span>At least 8 characters</span>
+      <section class="register-content" aria-label="Đăng ký YouMed">
+        <div class="promo-panel">
+          <img src="assets/images/login-illustration.png" alt="QR code tải ứng dụng YouMed">
         </div>
-        <div class="password-rule" [class.valid]="hasLetter" [class.invalid]="!hasLetter">
-          <mat-icon>{{ hasLetter ? 'check_circle' : 'cancel' }}</mat-icon>
-          <span>Contains at least one letter</span>
-        </div>
-        <div class="password-rule" [class.valid]="hasNumber" [class.invalid]="!hasNumber">
-          <mat-icon>{{ hasNumber ? 'check_circle' : 'cancel' }}</mat-icon>
-          <span>Contains at least one number</span>
-        </div>
-      </div>
 
-      <mat-form-field class="full-width">
-        <mat-label>Confirm Password</mat-label>
-        <input matInput type="password" formControlName="confirmPassword">
-        @if (form.hasError('passwordsMismatch') && form.get('confirmPassword')?.touched) {
-          <mat-error>Password confirmation does not match</mat-error>
-        }
-      </mat-form-field>
+        <form class="register-card" [formGroup]="form" (ngSubmit)="onSubmit()">
+          <div class="auth-tabs" role="tablist" aria-label="Đăng nhập hoặc đăng ký">
+            <a class="auth-tab" routerLink="/login" role="tab" aria-selected="false">Đăng nhập</a>
+            <button class="auth-tab active" type="button" role="tab" aria-selected="true">Đăng ký</button>
+          </div>
 
-      <button mat-raised-button color="primary" type="submit" class="full-width" [disabled]="form.invalid || loading">
-        {{ loading ? 'Registering...' : 'Register' }}
-      </button>
+          <label class="field-label" for="fullName">Họ và tên</label>
+          <input id="fullName" class="text-input" type="text" formControlName="fullName" autocomplete="name" placeholder="Nhập họ và tên">
 
-      <p style="text-align: center; margin-top: 16px;">
-        Already have an account? <a routerLink="/login">Login</a>
-      </p>
-    </form>
+          <label class="field-label" for="username">Số điện thoại</label>
+          <input id="username" class="text-input" type="tel" formControlName="username" autocomplete="username" inputmode="tel" placeholder="Số điện thoại">
+
+          <label class="field-label" for="email">Email</label>
+          <input id="email" class="text-input" type="email" formControlName="email" autocomplete="email" placeholder="Nhập email">
+
+          <label class="field-label" for="password">Mật khẩu</label>
+          <div class="password-field">
+            <input id="password" class="text-input" [type]="showPassword ? 'text' : 'password'" formControlName="password" autocomplete="new-password" placeholder="Nhập mật khẩu">
+            <button class="visibility-button" type="button" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'">
+              <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+            </button>
+          </div>
+
+          <div class="password-rules" aria-live="polite">
+            <div class="password-rule" [class.valid]="hasMinLength" [class.invalid]="!hasMinLength">
+              <mat-icon>{{ hasMinLength ? 'check_circle' : 'cancel' }}</mat-icon>
+              <span>Ít nhất 8 ký tự</span>
+            </div>
+            <div class="password-rule" [class.valid]="hasLetter" [class.invalid]="!hasLetter">
+              <mat-icon>{{ hasLetter ? 'check_circle' : 'cancel' }}</mat-icon>
+              <span>Có ít nhất 1 chữ cái</span>
+            </div>
+            <div class="password-rule" [class.valid]="hasNumber" [class.invalid]="!hasNumber">
+              <mat-icon>{{ hasNumber ? 'check_circle' : 'cancel' }}</mat-icon>
+              <span>Có ít nhất 1 chữ số</span>
+            </div>
+          </div>
+
+          <label class="field-label" for="confirmPassword">Nhập lại mật khẩu</label>
+          <div class="password-field compact">
+            <input id="confirmPassword" class="text-input" [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password" placeholder="Nhập lại mật khẩu">
+            <button class="visibility-button" type="button" (click)="showConfirmPassword = !showConfirmPassword" [attr.aria-label]="showConfirmPassword ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'">
+              <mat-icon>{{ showConfirmPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+            </button>
+          </div>
+
+          @if (passwordsMismatch) {
+            <p class="field-error">Mật khẩu nhập lại chưa khớp.</p>
+          }
+
+          <mat-checkbox class="terms-check" formControlName="acceptedTerms">Tôi đồng ý với điều khoản sử dụng</mat-checkbox>
+
+          <button mat-flat-button class="submit-button" type="submit" [disabled]="form.invalid || loading">
+            {{ loading ? 'Đang đăng ký...' : 'Đăng ký' }}
+          </button>
+
+          <div class="card-divider"></div>
+          <p class="login-prompt">Đã có tài khoản? <a routerLink="/login">Đăng nhập ngay</a></p>
+        </form>
+      </section>
+    </main>
   `,
   styles: [`
-    .password-rules {
-      display: grid;
-      gap: 6px;
-      margin: -8px 0 14px;
-      font-size: 13px;
-    }
-
-    .password-rule {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .password-rule mat-icon {
-      width: 18px;
-      height: 18px;
-      font-size: 18px;
-    }
-
-    .password-rule.valid {
-      color: #2e7d32;
-    }
-
-    .password-rule.invalid {
-      color: #c62828;
-    }
+    :host { display: block; min-height: 100vh; background: #f6f6f6; color: #171717; }
+    .register-page { min-height: 100vh; }
+    .site-header { display: flex; align-items: center; gap: 32px; height: 82px; padding: 0 30px; background: #ffffff; border-bottom: 1px solid #eceff3; }
+    .brand { display: inline-flex; align-items: center; text-decoration: none; font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: 0; }
+    .brand-mark { display: grid; place-items: center; width: 32px; height: 32px; margin-right: 2px; border-radius: 9px; background: #155bd4; color: #ffffff; font-size: 25px; font-weight: 900; }
+    .brand-you { color: #155bd4; }
+    .brand-med { color: #11b66a; }
+    .main-nav { display: flex; align-items: center; justify-content: flex-end; gap: 56px; flex: 1; font-size: 18px; font-weight: 700; }
+    .main-nav a, .outline-login, .login-prompt a, .auth-tab { color: #096fe7; text-decoration: none; }
+    .main-nav a { color: #151515; }
+    .chevron { color: #9aa4b2; font-size: 18px; }
+    .outline-login { display: inline-flex; align-items: center; justify-content: center; min-width: 142px; height: 46px; border: 1px solid #096fe7; border-radius: 4px; font-size: 17px; font-weight: 700; }
+    .register-content { display: grid; grid-template-columns: minmax(360px, 680px) minmax(380px, 560px); align-items: center; justify-content: center; gap: 86px; min-height: calc(100vh - 82px); padding: 48px; box-sizing: border-box; }
+    .promo-panel { display: flex; justify-content: center; }
+    .promo-panel img { display: block; width: min(100%, 650px); height: auto; }
+    .register-card { width: min(100%, 560px); padding: 32px 30px 40px; background: #ffffff; border: 1px solid #edf0f4; border-radius: 8px; box-sizing: border-box; }
+    .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9e9e9; margin-bottom: 20px; }
+    .auth-tab { border: 0; background: transparent; min-height: 48px; font: inherit; font-size: 18px; font-weight: 700; text-align: center; cursor: pointer; color: #151515; }
+    .auth-tab.active { color: #096fe7; border-bottom: 2px solid #096fe7; }
+    .field-label { display: block; margin: 0 0 7px; font-size: 17px; font-weight: 500; }
+    .text-input { width: 100%; height: 50px; margin-bottom: 14px; padding: 0 16px; border: 1px solid #e0e4ea; border-radius: 7px; box-sizing: border-box; font: inherit; font-size: 17px; outline: none; background: #ffffff; transition: border-color 160ms ease, box-shadow 160ms ease; }
+    .text-input:focus { border-color: #096fe7; box-shadow: 0 0 0 3px rgba(9, 111, 231, 0.12); }
+    .password-field { position: relative; }
+    .password-field.compact .text-input { margin-bottom: 8px; }
+    .password-field .text-input { padding-right: 52px; }
+    .visibility-button { position: absolute; top: 25px; right: 10px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; background: transparent; color: #98a1ad; transform: translateY(-50%); cursor: pointer; }
+    .visibility-button mat-icon { width: 22px; height: 22px; font-size: 22px; }
+    .password-rules { display: grid; gap: 6px; margin: -4px 0 14px; font-size: 14px; }
+    .password-rule { display: flex; align-items: center; gap: 8px; }
+    .password-rule mat-icon { width: 18px; height: 18px; font-size: 18px; }
+    .password-rule.valid { color: #2e7d32; }
+    .password-rule.invalid { color: #c62828; }
+    .field-error { margin: 0 0 10px; color: #d32f2f; font-size: 14px; }
+    .terms-check { display: block; margin-bottom: 24px; font-size: 16px; }
+    .submit-button { width: 100%; height: 56px; border-radius: 5px; font-size: 18px; font-weight: 800; background: #096fe7; color: #ffffff; }
+    .submit-button:disabled { background: #cccccc; color: #ffffff; }
+    .card-divider { height: 1px; margin: 30px 0 24px; background: #e9e9e9; }
+    .login-prompt { margin: 0; text-align: center; font-size: 18px; }
+    @media (max-width: 1080px) { .main-nav { gap: 24px; font-size: 16px; } .register-content { gap: 40px; } }
+    @media (max-width: 860px) { .site-header { height: auto; min-height: 72px; padding: 16px 20px; flex-wrap: wrap; } .main-nav { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; white-space: nowrap; } .outline-login { margin-left: auto; } .register-content { grid-template-columns: 1fr; min-height: auto; padding: 32px 20px; } .promo-panel img { max-width: 420px; } }
+    @media (max-width: 520px) { .brand { font-size: 29px; } .brand-mark { width: 28px; height: 28px; font-size: 22px; } .outline-login { min-width: 112px; height: 40px; font-size: 15px; } .register-card { padding: 26px 18px 34px; } }
   `]
 })
 export class RegisterComponent {
   loading = false;
+  showPassword = false;
+  showConfirmPassword = false;
   form = this.fb.group({
     username: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
@@ -112,7 +157,8 @@ export class RegisterComponent {
       Validators.minLength(8),
       Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)
     ]],
-    confirmPassword: ['', Validators.required]
+    confirmPassword: ['', Validators.required],
+    acceptedTerms: [false, Validators.requiredTrue]
   }, { validators: passwordsMatch });
 
   constructor(
@@ -123,7 +169,7 @@ export class RegisterComponent {
   ) {}
 
   get password(): string {
-    return this.form.get('password')?.value || '';
+    return this.form.controls.password.value || '';
   }
 
   get hasMinLength(): boolean {
@@ -138,18 +184,27 @@ export class RegisterComponent {
     return /\d/.test(this.password);
   }
 
+  get passwordsMismatch(): boolean {
+    return this.form.hasError('passwordsMismatch') && !!this.form.controls.confirmPassword.value;
+  }
+
   onSubmit(): void {
     if (this.form.valid) {
       this.loading = true;
-      const { confirmPassword, ...payload } = this.form.getRawValue();
-      this.authService.register(payload as { username: string; email: string; password: string; fullName: string }).subscribe({
+      const { username, email, password, fullName } = this.form.getRawValue();
+      this.authService.register({
+        username: username || '',
+        email: email || '',
+        password: password || '',
+        fullName: fullName || ''
+      }).subscribe({
         next: () => {
-          this.notification.success('Registration pending. Check your email to verify your account.');
+          this.notification.success('Đăng ký đang chờ xác thực. Vui lòng kiểm tra email.');
           this.router.navigate(['/login']);
         },
         error: (err) => {
           this.loading = false;
-          this.notification.error(err.error?.message || 'Registration failed');
+          this.notification.error(err.error?.message || 'Đăng ký thất bại');
         }
       });
     }
