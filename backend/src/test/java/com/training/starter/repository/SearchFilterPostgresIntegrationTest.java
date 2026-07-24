@@ -2,8 +2,6 @@ package com.training.starter.repository;
 
 import com.training.starter.BaseIntegrationTest;
 import com.training.starter.common.SafePageRequest;
-import com.training.starter.enums.AppointmentStatus;
-import com.training.starter.repository.specification.AppointmentSpecifications;
 import com.training.starter.repository.specification.PatientSpecifications;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,26 +29,15 @@ class SearchFilterPostgresIntegrationTest extends BaseIntegrationTest {
             "createdAt", "createdAt"
     );
 
-    private static final Map<String, String> APPOINTMENT_SORT_FIELDS = Map.of(
-            "id", "id",
-            "scheduledAt", "scheduledAt",
-            "status", "status",
-            "createdAt", "createdAt",
-            "patientId", "patient.id"
-    );
-
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private PatientRepository patientRepository;
 
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-
     @BeforeEach
     void setUp() {
-        jdbcTemplate.update("TRUNCATE TABLE appointments, patients RESTART IDENTITY CASCADE");
+        jdbcTemplate.update("TRUNCATE TABLE appointments, schedule_slots, patients RESTART IDENTITY CASCADE");
 
         var now = LocalDateTime.now().minusDays(30);
         jdbcTemplate.batchUpdate("""
@@ -68,26 +55,6 @@ class SearchFilterPostgresIntegrationTest extends BaseIntegrationTest {
                                 "note " + i,
                                 Timestamp.valueOf(now.plusMinutes(i)),
                                 Timestamp.valueOf(now.plusMinutes(i))
-                        })
-                        .toList()
-        );
-
-        jdbcTemplate.batchUpdate("""
-                INSERT INTO appointments(patient_id, scheduled_at, reason, status, note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                IntStream.rangeClosed(1, 5_000)
-                        .mapToObj(i -> {
-                            var scheduledAt = LocalDateTime.of(2026, 8, 1, 8, 0).plusMinutes(i * 15L);
-                            return new Object[]{
-                                    ((i - 1) % 2_500) + 1L,
-                                    Timestamp.valueOf(scheduledAt),
-                                    "Checkup " + i,
-                                    i % 3 == 0 ? "COMPLETED" : i % 3 == 1 ? "SCHEDULED" : "CANCELLED",
-                                    "appointment note " + i,
-                                    Timestamp.valueOf(scheduledAt.minusDays(7)),
-                                    Timestamp.valueOf(scheduledAt.minusDays(7))
-                            };
                         })
                         .toList()
         );
@@ -118,37 +85,6 @@ class SearchFilterPostgresIntegrationTest extends BaseIntegrationTest {
                 "idx_patients_phone_trgm",
                 "idx_patients_email_trgm"
         );
-    }
-
-    @Test
-    void appointmentFilters_useRealPostgresDataAndCompositeIndexes() {
-        var patientId = 42L;
-        var date = LocalDate.of(2026, 8, 1).plusDays(26);
-        var pageable = SafePageRequest.of(0, 20, "scheduledAt", "ASC",
-                APPOINTMENT_SORT_FIELDS, "scheduledAt", Sort.Direction.ASC);
-
-        var result = appointmentRepository.findAll(
-                AppointmentSpecifications.matchesFilters(date, patientId, AppointmentStatus.SCHEDULED),
-                pageable
-        );
-
-        assertThat(result.getContent()).allSatisfy(appointment -> {
-            assertThat(appointment.getPatient().getId()).isEqualTo(patientId);
-            assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
-            assertThat(appointment.getScheduledAt().toLocalDate()).isEqualTo(date);
-        });
-
-        var plan = explain("""
-                SELECT id FROM appointments
-                WHERE patient_id = 42
-                  AND status = 'SCHEDULED'
-                  AND scheduled_at >= TIMESTAMP '2026-08-27 00:00:00'
-                  AND scheduled_at < TIMESTAMP '2026-08-28 00:00:00'
-                ORDER BY scheduled_at ASC, id ASC
-                LIMIT 20
-                """);
-
-        assertThat(plan).contains("idx_appointments_patient_status_scheduled_at_id");
     }
 
     private String explain(String sql) {

@@ -1,7 +1,6 @@
 package com.training.starter.service;
 
 import com.training.starter.dto.request.CreateAppointmentRequest;
-import com.training.starter.dto.request.UpdateAppointmentRequest;
 import com.training.starter.dto.response.AppointmentResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,15 +9,13 @@ import java.time.LocalDate;
 
 public interface AppointmentService {
 
-    Page<AppointmentResponse> getAll(Pageable pageable);
+    Page<AppointmentResponse> getMyAppointments(String username, Pageable pageable);
 
-    Page<AppointmentResponse> search(LocalDate date, Long patientId, String status, Pageable pageable);
+    AppointmentResponse getMyAppointmentById(String username, Long id);
 
-    AppointmentResponse getById(Long id);
+    AppointmentResponse bookAppointment(String username, CreateAppointmentRequest request);
 
-    AppointmentResponse create(CreateAppointmentRequest request);
+    AppointmentResponse cancelAppointment(String username, Long id);
 
-    AppointmentResponse update(Long id, UpdateAppointmentRequest request);
-
-    void delete(Long id);
+    Page<AppointmentResponse> getDoctorAppointments(String username, LocalDate date, Pageable pageable);
 }

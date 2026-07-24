@@ -3,6 +3,7 @@ package com.training.starter;
 import com.training.starter.repository.AppointmentRepository;
 import com.training.starter.repository.DoctorRepository;
 import com.training.starter.repository.PatientRepository;
+import com.training.starter.repository.ScheduleSlotRepository;
 import com.training.starter.repository.UserRepository;
 import com.training.starter.service.AccessTokenBlacklistStore;
 import com.training.starter.service.RefreshTokenStore;
@@ -100,6 +101,11 @@ class ActuatorHealthEndpointIntegrationTest {
         @Bean
         DoctorRepository doctorRepository() {
             return repositoryProxy(DoctorRepository.class);
+        }
+
+        @Bean
+        ScheduleSlotRepository scheduleSlotRepository() {
+            return repositoryProxy(ScheduleSlotRepository.class);
         }
 
         private static <T> T repositoryProxy(Class<T> repositoryType) {

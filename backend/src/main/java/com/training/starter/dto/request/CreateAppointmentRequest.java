@@ -1,26 +1,17 @@
 package com.training.starter.dto.request;
 
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDateTime;
-
 public record CreateAppointmentRequest(
-        @NotNull(message = "Patient is required")
-        Long patientId,
+        @NotNull(message = "Doctor is required")
+        Long doctorId,
 
-        @NotNull(message = "Scheduled time is required")
-        @FutureOrPresent(message = "Scheduled time cannot be in the past")
-        LocalDateTime scheduledAt,
+        @NotNull(message = "Schedule slot is required")
+        Long slotId,
 
-        @NotBlank(message = "Reason is required")
-        @Size(max = 255)
-        String reason,
+        String symptoms,
 
-        @Size(max = 20)
-        String status,
-
-        String note
+        @Size(max = 1000)
+        String notes
 ) {}
