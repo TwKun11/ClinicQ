@@ -9,7 +9,10 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = localStorage.getItem('access_token');
   const isAuthRequest = req.url.includes('/auth/login')
+    || req.url.includes('/auth/google')
     || req.url.includes('/auth/register')
+    || req.url.includes('/auth/forgot-password')
+    || req.url.includes('/auth/reset-password')
     || req.url.includes('/auth/refresh')
     || req.url.includes('/auth/logout');
 

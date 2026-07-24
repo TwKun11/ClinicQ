@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiResponse<Void> handleBadCredentials(BadCredentialsException ex) {
-        return ApiResponse.error("Invalid username or password");
+        return ApiResponse.error("Invalid email or password");
     }
 
     @ExceptionHandler(AccessDeniedException.class)

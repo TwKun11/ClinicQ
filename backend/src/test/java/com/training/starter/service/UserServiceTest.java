@@ -47,7 +47,7 @@ class UserServiceTest {
         // Given
         var request = new CreateUserRequest("testuser", "test@example.com", "password123", "Test User");
         var entity = buildUser(1L, "testuser", "test@example.com");
-        var response = new UserResponse(1L, "testuser", "test@example.com", "Test User", "USER", true, LocalDateTime.now());
+        var response = new UserResponse(1L, "testuser", "test@example.com", "Test User", "USER", "ACTIVE", true, LocalDateTime.now());
 
         when(userRepository.existsByUsername("testuser")).thenReturn(false);
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
@@ -94,7 +94,7 @@ class UserServiceTest {
     void getById_found_returnsUserResponse() {
         // Given
         var entity = buildUser(1L, "testuser", "test@example.com");
-        var response = new UserResponse(1L, "testuser", "test@example.com", "Test User", "USER", true, LocalDateTime.now());
+        var response = new UserResponse(1L, "testuser", "test@example.com", "Test User", "USER", "ACTIVE", true, LocalDateTime.now());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(userMapper.toResponse(entity)).thenReturn(response);
@@ -122,7 +122,7 @@ class UserServiceTest {
         // Given
         var entity = buildUser(1L, "testuser", "test@example.com");
         var request = new UpdateUserRequest("new@example.com", "New Name", null);
-        var response = new UserResponse(1L, "testuser", "new@example.com", "New Name", "USER", true, LocalDateTime.now());
+        var response = new UserResponse(1L, "testuser", "new@example.com", "New Name", "USER", "ACTIVE", true, LocalDateTime.now());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(userRepository.existsByEmail("new@example.com")).thenReturn(false);

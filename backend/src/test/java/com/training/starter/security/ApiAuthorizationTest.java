@@ -88,7 +88,7 @@ class ApiAuthorizationTest {
     @Test
     @WithMockUser(roles = "USER")
     void userCanOnlyReadPatients() throws Exception {
-        when(patientService.getAll(any())).thenReturn(new PageImpl<>(List.of(patientResponse())));
+        when(patientService.search(any(), any())).thenReturn(new PageImpl<>(List.of(patientResponse())));
 
         mockMvc.perform(get("/api/v1/patients"))
                 .andExpect(status().isOk());
@@ -113,7 +113,7 @@ class ApiAuthorizationTest {
     @Test
     @WithMockUser(roles = "USER")
     void userCanOnlyReadAppointments() throws Exception {
-        when(appointmentService.getAll(any())).thenReturn(new PageImpl<>(List.of(appointmentResponse())));
+        when(appointmentService.search(any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(appointmentResponse())));
 
         mockMvc.perform(get("/api/v1/appointments"))
                 .andExpect(status().isOk());
@@ -134,7 +134,7 @@ class ApiAuthorizationTest {
     }
 
     private UserResponse userResponse() {
-        return new UserResponse(1L, "admin", "admin@example.com", "Admin", "ADMIN", true,
+        return new UserResponse(1L, "admin", "admin@example.com", "Admin", "ADMIN", "ACTIVE", true,
                 LocalDateTime.now());
     }
 
