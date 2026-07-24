@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatListModule } from '@angular/material/list';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -15,29 +15,34 @@ import { AuthService } from '../../core/services/auth.service';
     <mat-sidenav-container class="sidenav-container">
       <mat-sidenav mode="side" opened class="sidenav">
         <div class="sidenav-header">
-          <h3>Training Starter</h3>
+          <h3>ClinicQ</h3>
+          <p>Hệ thống quản trị</p>
         </div>
         <mat-nav-list>
           @if (!authService.isAdmin()) {
             <a mat-list-item routerLink="/home" routerLinkActive="active">
               <mat-icon matListItemIcon>home</mat-icon>
-              <span matListItemTitle>Home</span>
+              <span matListItemTitle>Trang chủ</span>
             </a>
           }
           @if (authService.isAdmin()) {
             <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
               <mat-icon matListItemIcon>dashboard</mat-icon>
-              <span matListItemTitle>Dashboard</span>
+              <span matListItemTitle>Tổng quan</span>
             </a>
             <a mat-list-item routerLink="/users" routerLinkActive="active">
               <mat-icon matListItemIcon>people</mat-icon>
-              <span matListItemTitle>Users</span>
+              <span matListItemTitle>Người dùng</span>
+            </a>
+            <a mat-list-item routerLink="/doctors" routerLinkActive="active">
+              <mat-icon matListItemIcon>medical_services</mat-icon>
+              <span matListItemTitle>Quản lý bác sĩ</span>
             </a>
           }
           @if (authService.canUseChangePassword()) {
             <a mat-list-item routerLink="/change-password" routerLinkActive="active">
               <mat-icon matListItemIcon>lock</mat-icon>
-              <span matListItemTitle>Change password</span>
+              <span matListItemTitle>Đổi mật khẩu</span>
             </a>
           }
         </mat-nav-list>
@@ -46,7 +51,7 @@ import { AuthService } from '../../core/services/auth.service';
       <mat-sidenav-content>
         <mat-toolbar color="primary">
           <span class="spacer"></span>
-          <span style="margin-right: 16px;">{{ authService.getEmail() || authService.getUsername() }}</span>
+          <span class="account-label">{{ authService.getEmail() || authService.getUsername() }}</span>
           <button mat-icon-button (click)="authService.logout()">
             <mat-icon>logout</mat-icon>
           </button>
@@ -60,10 +65,12 @@ import { AuthService } from '../../core/services/auth.service';
   styles: [`
     .sidenav-container { height: 100vh; }
     .sidenav { width: 240px; }
-    .sidenav-header { padding: 16px; text-align: center; border-bottom: 1px solid #e0e0e0; }
-    .sidenav-header h3 { margin: 0; }
+    .sidenav-header { padding: 18px 16px; text-align: center; border-bottom: 1px solid #e0e0e0; }
+    .sidenav-header h3 { margin: 0; color: #004e9f; font-size: 24px; font-weight: 800; }
+    .sidenav-header p { margin: 4px 0 0; color: #64748b; font-size: 12px; font-weight: 600; }
     .content { padding: 24px; }
     .spacer { flex: 1 1 auto; }
+    .account-label { margin-right: 16px; }
     .active { background-color: rgba(0, 0, 0, 0.04); }
   `]
 })
