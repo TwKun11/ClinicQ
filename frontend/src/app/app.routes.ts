@@ -53,6 +53,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/doctors/doctor-form.component').then(m => m.DoctorFormComponent)
       },
       {
+        path: 'schedules',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/schedules/schedule-management.component').then(m => m.ScheduleManagementComponent)
+      },
+      {
         path: 'change-password',
         canActivate: [userStaffGuard],
         loadComponent: () => import('./features/auth/change-password/change-password.component').then(m => m.ChangePasswordComponent)

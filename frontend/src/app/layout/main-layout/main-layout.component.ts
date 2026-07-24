@@ -38,6 +38,10 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-icon matListItemIcon>medical_services</mat-icon>
               <span matListItemTitle>Quản lý bác sĩ</span>
             </a>
+            <a mat-list-item routerLink="/schedules" routerLinkActive="active">
+              <mat-icon matListItemIcon>calendar_month</mat-icon>
+              <span matListItemTitle>Quản lý lịch khám</span>
+            </a>
           }
           @if (authService.canUseChangePassword()) {
             <a mat-list-item routerLink="/change-password" routerLinkActive="active">
