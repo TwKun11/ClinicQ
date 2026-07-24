@@ -121,7 +121,7 @@ class AppointmentServiceTest {
         slot.setStatus(ScheduleSlotStatus.BOOKED);
         var appointment = appointment(patient, slot, AppointmentStatus.SCHEDULED);
 
-        when(appointmentRepository.findByIdAndPatientUsername(9L, "patient")).thenReturn(Optional.of(appointment));
+        when(appointmentRepository.findByIdAndPatientPrincipal(9L, "patient")).thenReturn(Optional.of(appointment));
         when(scheduleSlotRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(slot));
         when(appointmentRepository.save(appointment)).thenReturn(appointment);
         doAnswer(invocation -> response(invocation.getArgument(0))).when(appointmentMapper).toResponse(appointment);

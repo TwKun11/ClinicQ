@@ -99,11 +99,28 @@ export class AuthService {
   }
 
   landingRouteForRole(role = this.getRole()): string {
-    return role === 'ADMIN' ? '/dashboard' : '/home';
+    if (role === 'ADMIN') {
+      return '/dashboard';
+    }
+    if (role === 'DOCTOR') {
+      return '/doctor/appointments';
+    }
+    if (role === 'USER') {
+      return '/appointments';
+    }
+    return '/home';
   }
 
   isAdmin(): boolean {
     return this.getRole() === 'ADMIN';
+  }
+
+  isDoctor(): boolean {
+    return this.getRole() === 'DOCTOR';
+  }
+
+  isUser(): boolean {
+    return this.getRole() === 'USER';
   }
 
   canUseChangePassword(): boolean {

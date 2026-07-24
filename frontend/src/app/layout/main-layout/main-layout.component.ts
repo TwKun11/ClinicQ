@@ -16,33 +16,45 @@ import { AuthService } from '../../core/services/auth.service';
       <mat-sidenav mode="side" opened class="sidenav">
         <div class="sidenav-header">
           <h3>ClinicQ</h3>
-          <p>Hệ thống quản trị</p>
+          <p>{{ authService.isAdmin() ? 'Admin console' : 'Patient portal' }}</p>
         </div>
         <mat-nav-list>
-          @if (!authService.isAdmin()) {
+          @if (!authService.isAdmin() && !authService.isUser()) {
             <a mat-list-item routerLink="/home" routerLinkActive="active">
               <mat-icon matListItemIcon>home</mat-icon>
-              <span matListItemTitle>Trang chủ</span>
+              <span matListItemTitle>Home</span>
+            </a>
+          }
+          @if (authService.isUser()) {
+            <a mat-list-item routerLink="/appointments" routerLinkActive="active">
+              <mat-icon matListItemIcon>medical_services</mat-icon>
+              <span matListItemTitle>Dat lich kham</span>
+            </a>
+          }
+          @if (authService.isDoctor()) {
+            <a mat-list-item routerLink="/doctor/appointments" routerLinkActive="active">
+              <mat-icon matListItemIcon>event_note</mat-icon>
+              <span matListItemTitle>Doctor schedule</span>
             </a>
           }
           @if (authService.isAdmin()) {
             <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
               <mat-icon matListItemIcon>dashboard</mat-icon>
-              <span matListItemTitle>Tổng quan</span>
+              <span matListItemTitle>Tong quan</span>
             </a>
             <a mat-list-item routerLink="/users" routerLinkActive="active">
               <mat-icon matListItemIcon>people</mat-icon>
-              <span matListItemTitle>Người dùng</span>
+              <span matListItemTitle>Nguoi dung</span>
             </a>
             <a mat-list-item routerLink="/doctors" routerLinkActive="active">
               <mat-icon matListItemIcon>medical_services</mat-icon>
-              <span matListItemTitle>Quản lý bác sĩ</span>
+              <span matListItemTitle>Quan ly bac si</span>
             </a>
           }
           @if (authService.canUseChangePassword()) {
             <a mat-list-item routerLink="/change-password" routerLinkActive="active">
               <mat-icon matListItemIcon>lock</mat-icon>
-              <span matListItemTitle>Đổi mật khẩu</span>
+              <span matListItemTitle>Doi mat khau</span>
             </a>
           }
         </mat-nav-list>
