@@ -33,6 +33,26 @@ export const routes: Routes = [
         loadComponent: () => import('./features/users/user-form/user-form.component').then(m => m.UserFormComponent)
       },
       {
+        path: 'doctors',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/doctors/doctor-management.component').then(m => m.DoctorManagementComponent)
+      },
+      {
+        path: 'doctors/new',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/doctors/doctor-form.component').then(m => m.DoctorFormComponent)
+      },
+      {
+        path: 'doctors/:id',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/doctors/doctor-detail.component').then(m => m.DoctorDetailComponent)
+      },
+      {
+        path: 'doctors/:id/edit',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/doctors/doctor-form.component').then(m => m.DoctorFormComponent)
+      },
+      {
         path: 'change-password',
         canActivate: [userStaffGuard],
         loadComponent: () => import('./features/auth/change-password/change-password.component').then(m => m.ChangePasswordComponent)

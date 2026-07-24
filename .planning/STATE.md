@@ -48,4 +48,5 @@ Phase 1 should clarify verification blockers and decide whether to fix the Maven
 | 20260724-backend-doctors | Implement ClinicQ Doctor backend slice | 2026-07-24 | uncommitted | [20260724-backend-doctors](./quick/20260724-backend-doctors/) |
 | 20260724-auth | Add email verification auth and password flows | 2026-07-24 | uncommitted | [20260724-auth-email-verification-passwords](./quick/20260724-auth-email-verification-passwords/) |
 | 20260724-google-auth | Add Google login and role-based auth routing | 2026-07-24 | uncommitted | [20260724-google-login-role-routing](./quick/20260724-google-login-role-routing/) |
-
+| 20260724-admin-doctors | Build admin doctor management UI | 2026-07-24 | uncommitted | [20260724-admin-doctor-management-ui](./quick/20260724-admin-doctor-management-ui/) |
+| 20260724-admin-dashboard | Build admin dashboard UI and seed admin account | 2026-07-24 | uncommitted | [20260724-admin-dashboard-ui-seed](./quick/20260724-admin-dashboard-ui-seed/) |
