@@ -1,4 +1,4 @@
-# Project State
+﻿# Project State
 
 **Updated:** 2026-07-23
 
@@ -45,6 +45,7 @@ Phase 1 should clarify verification blockers and decide whether to fix the Maven
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260723-m1m | Add backend search and filter APIs for patients and appointments | 2026-07-23 | uncommitted | [260723-m1m-add-backend-search-and-filter-apis-for-p](./quick/260723-m1m-add-backend-search-and-filter-apis-for-p/) |
+| 20260724-backend-doctors | Implement ClinicQ Doctor backend slice | 2026-07-24 | uncommitted | [20260724-backend-doctors](./quick/20260724-backend-doctors/) |
 | 20260724-auth | Add email verification auth and password flows | 2026-07-24 | uncommitted | [20260724-auth-email-verification-passwords](./quick/20260724-auth-email-verification-passwords/) |
 | 20260724-google-auth | Add Google login and role-based auth routing | 2026-07-24 | uncommitted | [20260724-google-login-role-routing](./quick/20260724-google-login-role-routing/) |
 | 20260724-admin-doctors | Build admin doctor management UI | 2026-07-24 | uncommitted | [20260724-admin-doctor-management-ui](./quick/20260724-admin-doctor-management-ui/) |
