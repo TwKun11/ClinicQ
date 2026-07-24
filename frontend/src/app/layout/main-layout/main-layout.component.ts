@@ -18,21 +18,35 @@ import { AuthService } from '../../core/services/auth.service';
           <h3>Training Starter</h3>
         </div>
         <mat-nav-list>
-          <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
-            <mat-icon matListItemIcon>dashboard</mat-icon>
-            <span matListItemTitle>Dashboard</span>
-          </a>
-          <a mat-list-item routerLink="/users" routerLinkActive="active">
-            <mat-icon matListItemIcon>people</mat-icon>
-            <span matListItemTitle>Users</span>
-          </a>
+          @if (!authService.isAdmin()) {
+            <a mat-list-item routerLink="/home" routerLinkActive="active">
+              <mat-icon matListItemIcon>home</mat-icon>
+              <span matListItemTitle>Home</span>
+            </a>
+          }
+          @if (authService.isAdmin()) {
+            <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
+              <mat-icon matListItemIcon>dashboard</mat-icon>
+              <span matListItemTitle>Dashboard</span>
+            </a>
+            <a mat-list-item routerLink="/users" routerLinkActive="active">
+              <mat-icon matListItemIcon>people</mat-icon>
+              <span matListItemTitle>Users</span>
+            </a>
+          }
+          @if (authService.canUseChangePassword()) {
+            <a mat-list-item routerLink="/change-password" routerLinkActive="active">
+              <mat-icon matListItemIcon>lock</mat-icon>
+              <span matListItemTitle>Change password</span>
+            </a>
+          }
         </mat-nav-list>
       </mat-sidenav>
 
       <mat-sidenav-content>
         <mat-toolbar color="primary">
           <span class="spacer"></span>
-          <span style="margin-right: 16px;">{{ authService.getUsername() }}</span>
+          <span style="margin-right: 16px;">{{ authService.getEmail() || authService.getUsername() }}</span>
           <button mat-icon-button (click)="authService.logout()">
             <mat-icon>logout</mat-icon>
           </button>

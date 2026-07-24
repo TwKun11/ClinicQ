@@ -2,6 +2,7 @@ package com.training.starter.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CreateUserRequest(
@@ -14,7 +15,8 @@ public record CreateUserRequest(
         String email,
 
         @NotBlank(message = "Password is required")
-        @Size(min = 6, max = 100)
+        @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$", message = "Password must contain at least one letter and one number")
         String password,
 
         @NotBlank(message = "Full name is required")

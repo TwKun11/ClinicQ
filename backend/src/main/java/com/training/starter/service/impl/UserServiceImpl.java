@@ -5,6 +5,7 @@ import com.training.starter.dto.request.UpdateUserRequest;
 import com.training.starter.dto.response.UserResponse;
 import com.training.starter.entity.User;
 import com.training.starter.enums.Role;
+import com.training.starter.enums.UserStatus;
 import com.training.starter.exception.DuplicateResourceException;
 import com.training.starter.exception.ResourceNotFoundException;
 import com.training.starter.mapper.UserMapper;
@@ -52,6 +53,7 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(Role.USER);
+        user.setStatus(UserStatus.ACTIVE);
         user.setActive(true);
 
         return userMapper.toResponse(userRepository.save(user));
@@ -69,6 +71,10 @@ public class UserServiceImpl implements UserService {
         }
 
         userMapper.updateEntity(user, request);
+        if (request.active() != null) {
+            user.setStatus(request.active() ? UserStatus.ACTIVE : UserStatus.INACTIVE);
+            user.setActive(request.active());
+        }
         return userMapper.toResponse(userRepository.save(user));
     }
 

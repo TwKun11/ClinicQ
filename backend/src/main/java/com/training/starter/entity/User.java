@@ -1,6 +1,7 @@
 package com.training.starter.entity;
 
 import com.training.starter.enums.Role;
+import com.training.starter.enums.UserStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,7 +39,12 @@ public class User extends BaseEntity {
     @Builder.Default
     private Role role = Role.USER;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private UserStatus status = UserStatus.PENDING;
+
     @Column(nullable = false)
     @Builder.Default
-    private boolean active = true;
+    private boolean active = false;
 }
