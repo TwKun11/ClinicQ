@@ -3,19 +3,21 @@ package com.training.starter.security;
 import com.training.starter.controller.AppointmentController;
 import com.training.starter.controller.DoctorController;
 import com.training.starter.controller.PatientController;
+import com.training.starter.controller.ScheduleSlotController;
 import com.training.starter.controller.UserController;
 import com.training.starter.dto.request.CreateAppointmentRequest;
 import com.training.starter.dto.request.CreateDoctorRequest;
 import com.training.starter.dto.request.CreatePatientRequest;
-import com.training.starter.dto.request.CreateUserRequest;
 import com.training.starter.dto.response.AppointmentResponse;
 import com.training.starter.dto.response.DoctorResponse;
 import com.training.starter.dto.response.PatientResponse;
+import com.training.starter.dto.response.ScheduleSlotResponse;
 import com.training.starter.dto.response.UserResponse;
 import com.training.starter.service.AccessTokenBlacklistStore;
 import com.training.starter.service.AppointmentService;
 import com.training.starter.service.DoctorService;
 import com.training.starter.service.PatientService;
+import com.training.starter.service.ScheduleSlotService;
 import com.training.starter.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,20 +31,22 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {
         UserController.class,
         PatientController.class,
         AppointmentController.class,
-        DoctorController.class
+        DoctorController.class,
+        ScheduleSlotController.class
 })
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class ApiAuthorizationTest {
@@ -61,6 +65,9 @@ class ApiAuthorizationTest {
 
     @MockBean
     private DoctorService doctorService;
+
+    @MockBean
+    private ScheduleSlotService scheduleSlotService;
 
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
@@ -108,44 +115,50 @@ class ApiAuthorizationTest {
     }
 
     @Test
-    @WithMockUser(roles = "STAFF")
-    void staffCanManagePatients() throws Exception {
-        when(patientService.create(any(CreatePatientRequest.class))).thenReturn(patientResponse());
-
-        mockMvc.perform(post("/api/v1/patients")
-                        .contentType("application/json")
-                        .content(createPatientJson()))
-                .andExpect(status().isCreated());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    void userCanOnlyReadAppointments() throws Exception {
-        when(appointmentService.search(any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(appointmentResponse())));
+    @WithMockUser(roles = "USER", username = "patient")
+    void userCanBookAndCancelOwnAppointments() throws Exception {
+        when(appointmentService.getMyAppointments(any(), any())).thenReturn(new PageImpl<>(List.of(appointmentResponse())));
+        when(appointmentService.bookAppointment(any(), any(CreateAppointmentRequest.class))).thenReturn(appointmentResponse());
+        when(appointmentService.cancelAppointment(any(), any())).thenReturn(appointmentResponse());
 
         mockMvc.perform(get("/api/v1/appointments"))
                 .andExpect(status().isOk());
-
-        mockMvc.perform(delete("/api/v1/appointments/1"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "STAFF")
-    void staffCanManageAppointments() throws Exception {
-        when(appointmentService.create(any(CreateAppointmentRequest.class))).thenReturn(appointmentResponse());
 
         mockMvc.perform(post("/api/v1/appointments")
                         .contentType("application/json")
                         .content(createAppointmentJson()))
                 .andExpect(status().isCreated());
+
+        mockMvc.perform(put("/api/v1/appointments/1/cancel"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void anonymousCanReadDoctors() throws Exception {
+    @WithMockUser(roles = "STAFF")
+    void staffCannotBookPatientAppointment() throws Exception {
+        mockMvc.perform(post("/api/v1/appointments")
+                        .contentType("application/json")
+                        .content(createAppointmentJson()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "DOCTOR", username = "doctor")
+    void doctorCanReadOwnAppointments() throws Exception {
+        when(appointmentService.getDoctorAppointments(any(), any(), any())).thenReturn(new PageImpl<>(List.of(appointmentResponse())));
+
+        mockMvc.perform(get("/api/v1/doctor/appointments?date=2030-01-01"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void anonymousCanReadDoctorsAndSlots() throws Exception {
         when(doctorService.getAll(any(), any())).thenReturn(new PageImpl<>(List.of(doctorResponse())));
+        when(scheduleSlotService.getAvailableSlots(any(), any())).thenReturn(List.of(slotResponse()));
 
         mockMvc.perform(get("/api/v1/doctors"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/doctors/1/slots?date=2030-01-01"))
                 .andExpect(status().isOk());
     }
 
@@ -160,13 +173,18 @@ class ApiAuthorizationTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void adminCanCreateDoctor() throws Exception {
+    void adminCanCreateDoctorAndSlots() throws Exception {
         when(doctorService.create(any(CreateDoctorRequest.class))).thenReturn(doctorResponse());
+        when(scheduleSlotService.generateSlots(any(), any())).thenReturn(List.of(slotResponse()));
 
         mockMvc.perform(post("/api/v1/admin/doctors")
                         .contentType("application/json")
                         .content(createDoctorJson()))
                 .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/admin/doctors/1/slots")
+                        .contentType("application/json")
+                        .content(createSlotJson()))
+                .andExpect(status().isOk());
     }
 
     private UserResponse userResponse() {
@@ -180,13 +198,19 @@ class ApiAuthorizationTest {
     }
 
     private AppointmentResponse appointmentResponse() {
-        return new AppointmentResponse(1L, 1L, "Nguyen Van A", LocalDateTime.now().plusDays(1),
-                "Consultation", "SCHEDULED", null, LocalDateTime.now());
+        return new AppointmentResponse(1L, 1L, "Nguyen Van A", 2L, "Dr. Lisa Martin", "Cardiology",
+                3L, LocalDate.of(2030, 1, 1), LocalTime.of(9, 0), LocalTime.of(9, 30),
+                "SCHEDULED", "Consultation", null, LocalDateTime.now());
     }
 
     private DoctorResponse doctorResponse() {
         return new DoctorResponse(1L, 10L, "Dr. Lisa Martin", "Cardiology", "A101",
                 24, true, LocalDateTime.now());
+    }
+
+    private ScheduleSlotResponse slotResponse() {
+        return new ScheduleSlotResponse(3L, 1L, "Dr. Lisa Martin", LocalDate.of(2030, 1, 1),
+                LocalTime.of(9, 0), LocalTime.of(9, 30), "AVAILABLE");
     }
 
     private String createPatientJson() {
@@ -206,11 +230,22 @@ class ApiAuthorizationTest {
     private String createAppointmentJson() {
         return """
                 {
-                  "patientId": 1,
-                  "scheduledAt": "2030-01-01T09:00:00",
-                  "reason": "Consultation",
-                  "status": "SCHEDULED",
-                  "note": null
+                  "doctorId": 1,
+                  "slotId": 3,
+                  "symptoms": "Consultation",
+                  "notes": null
+                }
+                """;
+    }
+
+    private String createSlotJson() {
+        return """
+                {
+                  "startDate": "2030-01-01",
+                  "endDate": "2030-01-01",
+                  "startTime": "09:00:00",
+                  "endTime": "10:00:00",
+                  "slotMinutes": 30
                 }
                 """;
     }

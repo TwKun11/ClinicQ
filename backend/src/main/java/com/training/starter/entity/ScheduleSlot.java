@@ -1,6 +1,6 @@
 package com.training.starter.entity;
 
-import com.training.starter.enums.AppointmentStatus;
+import com.training.starter.enums.ScheduleSlotStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,6 +9,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,28 +21,26 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "appointments")
+@Table(
+        name = "schedule_slots",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_schedule_slots_doctor_date_start",
+                columnNames = {"doctor_id", "slot_date", "start_time"}
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Appointment extends BaseEntity {
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "patient_id", nullable = false)
-    private User patient;
+public class ScheduleSlot extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "slot_id", nullable = false)
-    private ScheduleSlot slot;
-
-    @Column(name = "appointment_date", nullable = false)
-    private LocalDate appointmentDate;
+    @Column(name = "slot_date", nullable = false)
+    private LocalDate slotDate;
 
     @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
@@ -50,11 +50,9 @@ public class Appointment extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private AppointmentStatus status;
+    @Builder.Default
+    private ScheduleSlotStatus status = ScheduleSlotStatus.AVAILABLE;
 
-    @Column(columnDefinition = "TEXT")
-    private String symptoms;
-
-    @Column(columnDefinition = "TEXT")
-    private String notes;
+    @Version
+    private Long version;
 }

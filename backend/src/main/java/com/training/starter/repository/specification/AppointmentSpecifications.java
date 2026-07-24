@@ -7,7 +7,6 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,14 +22,13 @@ public final class AppointmentSpecifications {
         return (root, query, criteriaBuilder) -> {
             if (query.getResultType() != Long.class && query.getResultType() != long.class) {
                 root.fetch("patient", JoinType.LEFT);
+                root.fetch("doctor", JoinType.LEFT);
+                root.fetch("slot", JoinType.LEFT);
             }
 
             List<Predicate> predicates = new ArrayList<>();
             if (date != null) {
-                LocalDateTime start = date.atStartOfDay();
-                LocalDateTime end = date.plusDays(1).atStartOfDay();
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("scheduledAt"), start));
-                predicates.add(criteriaBuilder.lessThan(root.get("scheduledAt"), end));
+                predicates.add(criteriaBuilder.equal(root.get("appointmentDate"), date));
             }
             if (patientId != null) {
                 predicates.add(criteriaBuilder.equal(root.get("patient").get("id"), patientId));

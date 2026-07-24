@@ -1,35 +1,35 @@
 package com.training.starter.service;
 
 import com.training.starter.dto.request.CreateAppointmentRequest;
-import com.training.starter.dto.request.UpdateAppointmentRequest;
 import com.training.starter.dto.response.AppointmentResponse;
 import com.training.starter.entity.Appointment;
-import com.training.starter.entity.Patient;
+import com.training.starter.entity.Doctor;
+import com.training.starter.entity.ScheduleSlot;
+import com.training.starter.entity.User;
 import com.training.starter.enums.AppointmentStatus;
+import com.training.starter.enums.Role;
+import com.training.starter.enums.ScheduleSlotStatus;
 import com.training.starter.exception.BadRequestException;
-import com.training.starter.exception.ResourceNotFoundException;
 import com.training.starter.mapper.AppointmentMapper;
 import com.training.starter.repository.AppointmentRepository;
-import com.training.starter.repository.PatientRepository;
+import com.training.starter.repository.ScheduleSlotRepository;
+import com.training.starter.repository.UserRepository;
 import com.training.starter.service.impl.AppointmentServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.LocalTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,154 +40,161 @@ class AppointmentServiceTest {
     private AppointmentRepository appointmentRepository;
 
     @Mock
-    private PatientRepository patientRepository;
+    private ScheduleSlotRepository scheduleSlotRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private AppointmentMapper appointmentMapper;
 
-    @InjectMocks
     private AppointmentServiceImpl appointmentService;
 
+    @BeforeEach
+    void setUp() {
+        appointmentService = new AppointmentServiceImpl(
+                appointmentRepository,
+                scheduleSlotRepository,
+                userRepository,
+                appointmentMapper);
+    }
+
     @Test
-    void create_validRequest_returnsAppointmentResponse() {
-        var scheduledAt = LocalDateTime.now().plusDays(1);
-        var request = new CreateAppointmentRequest(1L, scheduledAt, "Annual checkup", null, "Bring lab results");
-        var patient = buildPatient(1L);
-        var appointment = buildAppointment(1L, patient, scheduledAt, AppointmentStatus.SCHEDULED);
-        var response = buildResponse(1L, 1L, scheduledAt, "SCHEDULED");
+    void bookAppointment_availableSlot_savesAppointmentAndBooksSlot() {
+        var patient = user(1L, "patient", Role.USER);
+        var slot = availableSlot();
+        var request = new CreateAppointmentRequest(2L, 3L, "Headache", "First visit");
+        var saved = appointment(patient, slot, AppointmentStatus.SCHEDULED);
+        var response = response(saved);
 
-        when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
-        when(appointmentMapper.toEntity(request)).thenReturn(appointment);
-        when(appointmentRepository.save(any(Appointment.class))).thenReturn(appointment);
-        when(appointmentMapper.toResponse(appointment)).thenReturn(response);
+        when(userRepository.findByUsername("patient")).thenReturn(Optional.of(patient));
+        when(scheduleSlotRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(slot));
+        when(appointmentRepository.existsByPatientIdAndAppointmentDateAndStatusNotAndStartTimeLessThanAndEndTimeGreaterThan(
+                1L, slot.getSlotDate(), AppointmentStatus.CANCELLED, slot.getEndTime(), slot.getStartTime()))
+                .thenReturn(false);
+        when(appointmentRepository.save(any(Appointment.class))).thenReturn(saved);
+        when(appointmentMapper.toResponse(saved)).thenReturn(response);
 
-        var result = appointmentService.create(request);
+        AppointmentResponse result = appointmentService.bookAppointment("patient", request);
 
-        assertThat(result.id()).isEqualTo(1L);
         assertThat(result.status()).isEqualTo("SCHEDULED");
-        verify(appointmentRepository).save(appointment);
+        assertThat(slot.getStatus()).isEqualTo(ScheduleSlotStatus.BOOKED);
+        verify(scheduleSlotRepository).save(slot);
     }
 
     @Test
-    void create_patientNotFound_throwsResourceNotFoundException() {
-        var request = new CreateAppointmentRequest(999L, LocalDateTime.now().plusDays(1), "Checkup", null, null);
-        when(patientRepository.findById(999L)).thenReturn(Optional.empty());
+    void bookAppointment_bookedSlot_throwsBadRequest() {
+        var patient = user(1L, "patient", Role.USER);
+        var slot = availableSlot();
+        slot.setStatus(ScheduleSlotStatus.BOOKED);
+        var request = new CreateAppointmentRequest(2L, 3L, "Headache", null);
 
-        assertThatThrownBy(() -> appointmentService.create(request))
-                .isInstanceOf(ResourceNotFoundException.class);
-        verify(appointmentRepository, never()).save(any());
+        when(userRepository.findByUsername("patient")).thenReturn(Optional.of(patient));
+        when(scheduleSlotRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(slot));
+
+        assertThatThrownBy(() -> appointmentService.bookAppointment("patient", request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("not available");
     }
 
     @Test
-    void create_invalidStatus_throwsBadRequestException() {
-        var request = new CreateAppointmentRequest(1L, LocalDateTime.now().plusDays(1), "Checkup", "waiting", null);
-        var patient = buildPatient(1L);
-        var appointment = buildAppointment(null, patient, request.scheduledAt(), null);
+    void bookAppointment_patientOverlap_throwsBadRequest() {
+        var patient = user(1L, "patient", Role.USER);
+        var slot = availableSlot();
+        var request = new CreateAppointmentRequest(2L, 3L, "Headache", null);
 
-        when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
-        when(appointmentMapper.toEntity(request)).thenReturn(appointment);
+        when(userRepository.findByUsername("patient")).thenReturn(Optional.of(patient));
+        when(scheduleSlotRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(slot));
+        when(appointmentRepository.existsByPatientIdAndAppointmentDateAndStatusNotAndStartTimeLessThanAndEndTimeGreaterThan(
+                1L, slot.getSlotDate(), AppointmentStatus.CANCELLED, slot.getEndTime(), slot.getStartTime()))
+                .thenReturn(true);
 
-        assertThatThrownBy(() -> appointmentService.create(request))
-                .isInstanceOf(BadRequestException.class);
-        verify(appointmentRepository, never()).save(any());
+        assertThatThrownBy(() -> appointmentService.bookAppointment("patient", request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("already has an appointment");
     }
 
     @Test
-    void getById_found_returnsAppointmentResponse() {
-        var scheduledAt = LocalDateTime.now().plusDays(1);
-        var patient = buildPatient(1L);
-        var appointment = buildAppointment(1L, patient, scheduledAt, AppointmentStatus.SCHEDULED);
-        var response = buildResponse(1L, 1L, scheduledAt, "SCHEDULED");
+    void cancelAppointment_scheduledAppointment_cancelsAndReopensSlot() {
+        var patient = user(1L, "patient", Role.USER);
+        var slot = availableSlot();
+        slot.setStatus(ScheduleSlotStatus.BOOKED);
+        var appointment = appointment(patient, slot, AppointmentStatus.SCHEDULED);
 
-        when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
-        when(appointmentMapper.toResponse(appointment)).thenReturn(response);
-
-        var result = appointmentService.getById(1L);
-
-        assertThat(result.id()).isEqualTo(1L);
-        assertThat(result.patientId()).isEqualTo(1L);
-    }
-
-    @Test
-    void update_validRequest_updatesAndReturns() {
-        var scheduledAt = LocalDateTime.now().plusDays(1);
-        var newScheduledAt = LocalDateTime.now().plusDays(2);
-        var patient = buildPatient(1L);
-        var appointment = buildAppointment(1L, patient, scheduledAt, AppointmentStatus.SCHEDULED);
-        var request = new UpdateAppointmentRequest(null, newScheduledAt, "Follow up", "completed", "Done");
-        var response = buildResponse(1L, 1L, newScheduledAt, "COMPLETED");
-
-        when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
+        when(appointmentRepository.findByIdAndPatientUsername(9L, "patient")).thenReturn(Optional.of(appointment));
+        when(scheduleSlotRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(slot));
         when(appointmentRepository.save(appointment)).thenReturn(appointment);
-        when(appointmentMapper.toResponse(appointment)).thenReturn(response);
+        doAnswer(invocation -> response(invocation.getArgument(0))).when(appointmentMapper).toResponse(appointment);
 
-        var result = appointmentService.update(1L, request);
+        AppointmentResponse result = appointmentService.cancelAppointment("patient", 9L);
 
-        assertThat(result.status()).isEqualTo("COMPLETED");
-        assertThat(appointment.getScheduledAt()).isEqualTo(newScheduledAt);
-        assertThat(appointment.getReason()).isEqualTo("Follow up");
-        verify(appointmentRepository).save(appointment);
+        assertThat(result.status()).isEqualTo("CANCELLED");
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
+        assertThat(slot.getStatus()).isEqualTo(ScheduleSlotStatus.AVAILABLE);
     }
 
-    @Test
-    void delete_existingAppointment_deletesSuccessfully() {
-        var appointment = buildAppointment(1L, buildPatient(1L), LocalDateTime.now().plusDays(1), AppointmentStatus.SCHEDULED);
-        when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
-
-        appointmentService.delete(1L);
-
-        verify(appointmentRepository).delete(appointment);
-    }
-
-    @Test
-    void search_withFilters_usesRepositorySpecificationAndPageable() {
-        var scheduledAt = LocalDateTime.now().plusDays(1);
-        var pageable = PageRequest.of(0, 20);
-        var appointment = buildAppointment(1L, buildPatient(1L), scheduledAt, AppointmentStatus.SCHEDULED);
-        var response = buildResponse(1L, 1L, scheduledAt, "SCHEDULED");
-
-        when(appointmentRepository.findAll(any(Specification.class), eq(pageable)))
-                .thenReturn(new PageImpl<>(List.of(appointment), pageable, 1));
-        when(appointmentMapper.toResponse(appointment)).thenReturn(response);
-
-        var result = appointmentService.search(scheduledAt.toLocalDate(), 1L, "scheduled", pageable);
-
-        assertThat(result.getContent()).containsExactly(response);
-        verify(appointmentRepository).findAll(any(Specification.class), eq(pageable));
-    }
-
-    @Test
-    void search_invalidStatus_throwsBadRequestException() {
-        var pageable = PageRequest.of(0, 20);
-
-        assertThatThrownBy(() -> appointmentService.search(null, null, "waiting", pageable))
-                .isInstanceOf(BadRequestException.class);
-        verify(appointmentRepository, never()).findAll(any(Specification.class), eq(pageable));
-    }
-
-    private Patient buildPatient(Long id) {
-        Patient patient = Patient.builder()
-                .fullName("Jane Patient")
-                .phone("0123456789")
-                .email("jane@example.com")
+    private ScheduleSlot availableSlot() {
+        Doctor doctor = Doctor.builder()
+                .user(user(20L, "doctor", Role.DOCTOR))
+                .specialty("Cardiology")
+                .active(true)
                 .build();
-        patient.setId(id);
-        return patient;
+        doctor.setId(2L);
+        ScheduleSlot slot = ScheduleSlot.builder()
+                .doctor(doctor)
+                .slotDate(LocalDate.of(2030, 1, 1))
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(9, 30))
+                .status(ScheduleSlotStatus.AVAILABLE)
+                .build();
+        slot.setId(3L);
+        return slot;
     }
 
-    private Appointment buildAppointment(Long id, Patient patient, LocalDateTime scheduledAt, AppointmentStatus status) {
+    private Appointment appointment(User patient, ScheduleSlot slot, AppointmentStatus status) {
         Appointment appointment = Appointment.builder()
                 .patient(patient)
-                .scheduledAt(scheduledAt)
-                .reason("Annual checkup")
+                .doctor(slot.getDoctor())
+                .slot(slot)
+                .appointmentDate(slot.getSlotDate())
+                .startTime(slot.getStartTime())
+                .endTime(slot.getEndTime())
                 .status(status)
-                .note("Bring lab results")
+                .symptoms("Headache")
+                .notes("First visit")
                 .build();
-        appointment.setId(id);
+        appointment.setId(9L);
         return appointment;
     }
 
-    private AppointmentResponse buildResponse(Long id, Long patientId, LocalDateTime scheduledAt, String status) {
-        return new AppointmentResponse(id, patientId, "Jane Patient", scheduledAt, "Annual checkup", status, "Bring lab results", LocalDateTime.now());
+    private User user(Long id, String username, Role role) {
+        User user = User.builder()
+                .username(username)
+                .email(username + "@example.com")
+                .password("secret")
+                .fullName(username)
+                .role(role)
+                .active(true)
+                .build();
+        user.setId(id);
+        return user;
+    }
+
+    private AppointmentResponse response(Appointment appointment) {
+        return new AppointmentResponse(
+                appointment.getId(),
+                appointment.getPatient().getId(),
+                appointment.getPatient().getFullName(),
+                appointment.getDoctor().getId(),
+                appointment.getDoctor().getUser().getFullName(),
+                appointment.getDoctor().getSpecialty(),
+                appointment.getSlot().getId(),
+                appointment.getAppointmentDate(),
+                appointment.getStartTime(),
+                appointment.getEndTime(),
+                appointment.getStatus().name(),
+                appointment.getSymptoms(),
+                appointment.getNotes(),
+                LocalDateTime.now());
     }
 }
