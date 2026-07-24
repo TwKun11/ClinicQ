@@ -34,14 +34,14 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional(readOnly = true)
     public Page<AppointmentResponse> getMyAppointments(String username, Pageable pageable) {
-        return appointmentRepository.findByPatientUsername(username, pageable)
+        return appointmentRepository.findByPatientPrincipal(username, pageable)
                 .map(appointmentMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
     public AppointmentResponse getMyAppointmentById(String username, Long id) {
-        Appointment appointment = appointmentRepository.findByIdAndPatientUsername(id, username)
+        Appointment appointment = appointmentRepository.findByIdAndPatientPrincipal(id, username)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", id));
         return appointmentMapper.toResponse(appointment);
     }
@@ -94,7 +94,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional
     public AppointmentResponse cancelAppointment(String username, Long id) {
-        Appointment appointment = appointmentRepository.findByIdAndPatientUsername(id, username)
+        Appointment appointment = appointmentRepository.findByIdAndPatientPrincipal(id, username)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", id));
         if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
             throw new BadRequestException("Only scheduled appointments can be cancelled");
@@ -113,12 +113,13 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional(readOnly = true)
     public Page<AppointmentResponse> getDoctorAppointments(String username, LocalDate date, Pageable pageable) {
         LocalDate appointmentDate = date == null ? LocalDate.now() : date;
-        return appointmentRepository.findByDoctorUserUsernameAndAppointmentDate(username, appointmentDate, pageable)
+        return appointmentRepository.findByDoctorPrincipalAndAppointmentDate(username, appointmentDate, pageable)
                 .map(appointmentMapper::toResponse);
     }
 
     private User findUser(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+                .or(() -> userRepository.findByEmail(username))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username or email: " + username));
     }
 }

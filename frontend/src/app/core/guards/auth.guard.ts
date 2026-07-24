@@ -37,3 +37,27 @@ export const userStaffGuard: CanActivateFn = () => {
   router.navigate([authService.landingRouteForRole()]);
   return false;
 };
+
+export const userGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  const authService = inject(AuthService);
+
+  if (authService.isUser()) {
+    return true;
+  }
+
+  router.navigate([authService.landingRouteForRole()]);
+  return false;
+};
+
+export const doctorGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  const authService = inject(AuthService);
+
+  if (authService.isDoctor()) {
+    return true;
+  }
+
+  router.navigate([authService.landingRouteForRole()]);
+  return false;
+};

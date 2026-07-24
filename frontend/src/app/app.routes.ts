@@ -1,7 +1,17 @@
 import { Routes } from '@angular/router';
-import { adminGuard, authGuard, userStaffGuard } from './core/guards/auth.guard';
+import { adminGuard, authGuard, doctorGuard, userGuard, userStaffGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  {
+    path: 'appointments',
+    canActivate: [authGuard, userGuard],
+    loadComponent: () => import('./features/appointments/appointment-page/appointment-page.component').then(m => m.AppointmentPageComponent)
+  },
+  {
+    path: 'appointment',
+    canActivate: [authGuard, userGuard],
+    loadComponent: () => import('./features/appointments/appointment-page/appointment-page.component').then(m => m.AppointmentPageComponent)
+  },
   {
     path: '',
     loadComponent: () => import('./layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
@@ -11,6 +21,11 @@ export const routes: Routes = [
       {
         path: 'home',
         loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent)
+      },
+      {
+        path: 'doctor/appointments',
+        canActivate: [doctorGuard],
+        loadComponent: () => import('./features/appointments/doctor-appointments/doctor-appointments.component').then(m => m.DoctorAppointmentsComponent)
       },
       {
         path: 'dashboard',

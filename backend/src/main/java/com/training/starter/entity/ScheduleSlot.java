@@ -54,5 +54,6 @@ public class ScheduleSlot extends BaseEntity {
     private ScheduleSlotStatus status = ScheduleSlotStatus.AVAILABLE;
 
     @Version
-    private Long version;
+    @Builder.Default
+    private Long version = 0L;
 }
