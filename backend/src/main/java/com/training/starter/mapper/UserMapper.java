@@ -14,9 +14,11 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface UserMapper {
 
     @Mapping(target = "role", expression = "java(user.getRole().name())")
+    @Mapping(target = "status", expression = "java(user.getStatus().name())")
     UserResponse toResponse(User user);
 
     @Mapping(target = "role", ignore = true)
+    @Mapping(target = "status", ignore = true)
     @Mapping(target = "active", ignore = true)
     User toEntity(CreateUserRequest request);
 
@@ -24,5 +26,6 @@ public interface UserMapper {
     @Mapping(target = "username", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "role", ignore = true)
+    @Mapping(target = "status", ignore = true)
     void updateEntity(@MappingTarget User user, UpdateUserRequest request);
 }

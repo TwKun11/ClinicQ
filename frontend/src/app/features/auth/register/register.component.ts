@@ -1,11 +1,17 @@
 import { Component } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
+
+function passwordsMatch(control: AbstractControl): ValidationErrors | null {
+  const password = control.get('password')?.value;
+  const confirmPassword = control.get('confirmPassword')?.value;
+  return password && confirmPassword && password !== confirmPassword ? { passwordsMismatch: true } : null;
+}
 
 @Component({
   selector: 'app-register',
@@ -55,6 +61,21 @@ import { NotificationService } from '../../../core/services/notification.service
             </button>
           </div>
 
+          <div class="password-rules" aria-live="polite">
+            <div class="password-rule" [class.valid]="hasMinLength" [class.invalid]="!hasMinLength">
+              <mat-icon>{{ hasMinLength ? 'check_circle' : 'cancel' }}</mat-icon>
+              <span>Ít nhất 8 ký tự</span>
+            </div>
+            <div class="password-rule" [class.valid]="hasLetter" [class.invalid]="!hasLetter">
+              <mat-icon>{{ hasLetter ? 'check_circle' : 'cancel' }}</mat-icon>
+              <span>Có ít nhất 1 chữ cái</span>
+            </div>
+            <div class="password-rule" [class.valid]="hasNumber" [class.invalid]="!hasNumber">
+              <mat-icon>{{ hasNumber ? 'check_circle' : 'cancel' }}</mat-icon>
+              <span>Có ít nhất 1 chữ số</span>
+            </div>
+          </div>
+
           <label class="field-label" for="confirmPassword">Nhập lại mật khẩu</label>
           <div class="password-field compact">
             <input id="confirmPassword" class="text-input" [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password" placeholder="Nhập lại mật khẩu">
@@ -69,7 +90,7 @@ import { NotificationService } from '../../../core/services/notification.service
 
           <mat-checkbox class="terms-check" formControlName="acceptedTerms">Tôi đồng ý với điều khoản sử dụng</mat-checkbox>
 
-          <button mat-flat-button class="submit-button" type="submit" [disabled]="form.invalid || passwordsMismatch || loading">
+          <button mat-flat-button class="submit-button" type="submit" [disabled]="form.invalid || loading">
             {{ loading ? 'Đang đăng ký...' : 'Đăng ký' }}
           </button>
 
@@ -107,6 +128,11 @@ import { NotificationService } from '../../../core/services/notification.service
     .password-field .text-input { padding-right: 52px; }
     .visibility-button { position: absolute; top: 25px; right: 10px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; background: transparent; color: #98a1ad; transform: translateY(-50%); cursor: pointer; }
     .visibility-button mat-icon { width: 22px; height: 22px; font-size: 22px; }
+    .password-rules { display: grid; gap: 6px; margin: -4px 0 14px; font-size: 14px; }
+    .password-rule { display: flex; align-items: center; gap: 8px; }
+    .password-rule mat-icon { width: 18px; height: 18px; font-size: 18px; }
+    .password-rule.valid { color: #2e7d32; }
+    .password-rule.invalid { color: #c62828; }
     .field-error { margin: 0 0 10px; color: #d32f2f; font-size: 14px; }
     .terms-check { display: block; margin-bottom: 24px; font-size: 16px; }
     .submit-button { width: 100%; height: 56px; border-radius: 5px; font-size: 18px; font-weight: 800; background: #096fe7; color: #ffffff; }
@@ -126,10 +152,14 @@ export class RegisterComponent {
     username: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
     fullName: ['', Validators.required],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-    confirmPassword: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [
+      Validators.required,
+      Validators.minLength(8),
+      Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)
+    ]],
+    confirmPassword: ['', Validators.required],
     acceptedTerms: [false, Validators.requiredTrue]
-  });
+  }, { validators: passwordsMatch });
 
   constructor(
     private fb: FormBuilder,
@@ -138,14 +168,28 @@ export class RegisterComponent {
     private notification: NotificationService
   ) {}
 
+  get password(): string {
+    return this.form.controls.password.value || '';
+  }
+
+  get hasMinLength(): boolean {
+    return this.password.length >= 8;
+  }
+
+  get hasLetter(): boolean {
+    return /[A-Za-z]/.test(this.password);
+  }
+
+  get hasNumber(): boolean {
+    return /\d/.test(this.password);
+  }
+
   get passwordsMismatch(): boolean {
-    const password = this.form.controls.password.value;
-    const confirmPassword = this.form.controls.confirmPassword.value;
-    return !!confirmPassword && password !== confirmPassword;
+    return this.form.hasError('passwordsMismatch') && !!this.form.controls.confirmPassword.value;
   }
 
   onSubmit(): void {
-    if (this.form.valid && !this.passwordsMismatch) {
+    if (this.form.valid) {
       this.loading = true;
       const { username, email, password, fullName } = this.form.getRawValue();
       this.authService.register({
@@ -155,8 +199,8 @@ export class RegisterComponent {
         fullName: fullName || ''
       }).subscribe({
         next: () => {
-          this.notification.success('Đăng ký thành công');
-          this.router.navigate(['/dashboard']);
+          this.notification.success('Đăng ký đang chờ xác thực. Vui lòng kiểm tra email.');
+          this.router.navigate(['/login']);
         },
         error: (err) => {
           this.loading = false;

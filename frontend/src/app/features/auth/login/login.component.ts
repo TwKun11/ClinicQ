@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+import { AfterViewInit, Component, NgZone } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,6 +6,20 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { environment } from '../../../../environments/environment';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (response: { credential?: string }) => void }) => void;
+          renderButton: (element: HTMLElement, options: { theme: string; size: string; width?: number }) => void;
+        };
+      };
+    };
+  }
+}
 
 @Component({
   selector: 'app-login',
@@ -40,15 +54,14 @@ import { NotificationService } from '../../../core/services/notification.service
             <a class="auth-tab" routerLink="/register" href="/register" (click)="goToRegister($event)" role="tab" aria-selected="false">Đăng ký</a>
           </div>
 
-          <label class="field-label" for="username">Số điện thoại</label>
+          <label class="field-label" for="email">Email</label>
           <input
-            id="username"
+            id="email"
             class="text-input"
-            type="tel"
-            formControlName="username"
-            autocomplete="username"
-            inputmode="tel"
-            placeholder="Số điện thoại">
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="Nhập email">
 
           <label class="field-label" for="password">Mật khẩu</label>
           <div class="password-field">
@@ -66,12 +79,15 @@ import { NotificationService } from '../../../core/services/notification.service
 
           <div class="form-tools">
             <mat-checkbox formControlName="rememberMe">Ghi nhớ mật khẩu</mat-checkbox>
-            <a href="#">Quên mật khẩu?</a>
+            <a routerLink="/forgot-password">Quên mật khẩu?</a>
           </div>
 
           <button mat-flat-button class="submit-button" type="submit" [disabled]="form.invalid || loading">
             {{ loading ? 'Đang đăng nhập...' : 'Đăng nhập' }}
           </button>
+
+          <div class="social-divider">hoặc</div>
+          <div id="google-login-button" class="google-button"></div>
 
           <div class="card-divider"></div>
 
@@ -313,6 +329,19 @@ import { NotificationService } from '../../../core/services/notification.service
       color: #ffffff;
     }
 
+    .social-divider {
+      color: #7a8491;
+      margin: 22px 0 16px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    .google-button {
+      display: flex;
+      justify-content: center;
+      min-height: 44px;
+    }
+
     .card-divider {
       height: 1px;
       margin: 40px 0 30px;
@@ -395,11 +424,11 @@ import { NotificationService } from '../../../core/services/notification.service
     }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements AfterViewInit {
   loading = false;
   showPassword = false;
   form = this.fb.group({
-    username: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
     rememberMe: [false]
   });
@@ -408,8 +437,15 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private zone: NgZone
   ) {}
+
+  ngAfterViewInit(): void {
+    this.loadGoogleScript()
+      .then(() => this.renderGoogleButton())
+      .catch(() => this.notification.error('Không tải được Google login'));
+  }
 
   goToRegister(event: Event): void {
     event.preventDefault();
@@ -419,11 +455,11 @@ export class LoginComponent {
   onSubmit(): void {
     if (this.form.valid) {
       this.loading = true;
-      const { username, password } = this.form.getRawValue();
-      this.authService.login({ username: username || '', password: password || '' }).subscribe({
-        next: () => {
+      const { email, password } = this.form.getRawValue();
+      this.authService.login({ email: email || '', password: password || '' }).subscribe({
+        next: (res) => {
           this.notification.success('Đăng nhập thành công');
-          this.router.navigate(['/dashboard']);
+          this.router.navigate([this.authService.landingRouteForRole(res.data?.role)]);
         },
         error: (err) => {
           this.loading = false;
@@ -431,5 +467,57 @@ export class LoginComponent {
         }
       });
     }
+  }
+
+  private renderGoogleButton(): void {
+    const target = document.getElementById('google-login-button');
+    if (!target || !window.google) {
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: environment.googleClientId,
+      callback: (response) => this.zone.run(() => this.onGoogleCredential(response.credential))
+    });
+    window.google.accounts.id.renderButton(target, {
+      theme: 'outline',
+      size: 'large',
+      width: 320
+    });
+  }
+
+  private onGoogleCredential(credential?: string): void {
+    if (!credential) {
+      this.notification.error('Google login thất bại');
+      return;
+    }
+
+    this.loading = true;
+    this.authService.googleLogin(credential).subscribe({
+      next: (res) => {
+        this.notification.success('Đăng nhập thành công');
+        this.router.navigate([this.authService.landingRouteForRole(res.data?.role)]);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.notification.error(err.error?.message || 'Google login thất bại');
+      }
+    });
+  }
+
+  private loadGoogleScript(): Promise<void> {
+    if (window.google) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject();
+      document.head.appendChild(script);
+    });
   }
 }

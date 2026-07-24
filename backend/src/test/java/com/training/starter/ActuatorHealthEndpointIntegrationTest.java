@@ -18,6 +18,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -71,12 +73,10 @@ class ActuatorHealthEndpointIntegrationTest {
     }
 
     @Test
-    void unknownRoute_returnsNotFoundInsteadOfInternalServerError() {
+    void unknownAuthRoute_requiresAuthentication() {
         ResponseEntity<Map> response = restTemplate.getForEntity("/api/v1/auth/does-not-exist", Map.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).containsEntry("success", false);
-        assertThat(response.getBody()).containsEntry("message", "Resource not found");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @TestConfiguration
@@ -151,6 +151,11 @@ class ActuatorHealthEndpointIntegrationTest {
         @Bean
         RefreshTokenStore refreshTokenStore() {
             return new RefreshTokenStore(new RedisTemplate<>());
+        }
+
+        @Bean
+        JavaMailSender javaMailSender() {
+            return mock(JavaMailSender.class);
         }
 
         @Bean

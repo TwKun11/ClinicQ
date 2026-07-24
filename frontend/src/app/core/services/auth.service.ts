@@ -8,6 +8,7 @@ import { ApiResponse } from '../models/api-response.model';
 export interface AuthResponse {
   accessToken: string;
   username: string;
+  email: string;
   role: string;
 }
 
@@ -17,7 +18,7 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  login(credentials: { username: string; password: string }): Observable<ApiResponse<AuthResponse>> {
+  login(credentials: { email: string; password: string }): Observable<ApiResponse<AuthResponse>> {
     return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, credentials, { withCredentials: true }).pipe(
       tap(res => {
         if (res.success && res.data) {
@@ -27,14 +28,34 @@ export class AuthService {
     );
   }
 
-  register(data: { username: string; email: string; password: string; fullName: string }): Observable<ApiResponse<AuthResponse>> {
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, data, { withCredentials: true }).pipe(
+  googleLogin(credential: string): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/google`, { credential }, { withCredentials: true }).pipe(
       tap(res => {
         if (res.success && res.data) {
           this.storeTokens(res.data);
         }
       })
     );
+  }
+
+  register(data: { username: string; email: string; password: string; fullName: string }): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, data, { withCredentials: true });
+  }
+
+  me(): Observable<ApiResponse<{ id: number; username: string; email: string; fullName: string; role: string; status: string; active: boolean }>> {
+    return this.http.get<ApiResponse<{ id: number; username: string; email: string; fullName: string; role: string; status: string; active: boolean }>>(`${this.apiUrl}/me`);
+  }
+
+  forgotPassword(email: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/reset-password`, { token, newPassword });
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/change-password`, { currentPassword, newPassword });
   }
 
   logout(): void {
@@ -57,6 +78,7 @@ export class AuthService {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('username');
+    localStorage.removeItem('email');
     localStorage.removeItem('role');
   }
 
@@ -68,8 +90,25 @@ export class AuthService {
     return localStorage.getItem('username');
   }
 
+  getEmail(): string | null {
+    return localStorage.getItem('email');
+  }
+
   getRole(): string | null {
     return localStorage.getItem('role');
+  }
+
+  landingRouteForRole(role = this.getRole()): string {
+    return role === 'ADMIN' ? '/dashboard' : '/home';
+  }
+
+  isAdmin(): boolean {
+    return this.getRole() === 'ADMIN';
+  }
+
+  canUseChangePassword(): boolean {
+    const role = this.getRole();
+    return role === 'USER' || role === 'STAFF';
   }
 
   isAuthenticated(): boolean {
@@ -79,6 +118,7 @@ export class AuthService {
   private storeTokens(auth: AuthResponse): void {
     localStorage.setItem('access_token', auth.accessToken);
     localStorage.setItem('username', auth.username);
+    localStorage.setItem('email', auth.email);
     localStorage.setItem('role', auth.role);
   }
 }

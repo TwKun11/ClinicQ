@@ -170,7 +170,7 @@ class ApiAuthorizationTest {
     }
 
     private UserResponse userResponse() {
-        return new UserResponse(1L, "admin", "admin@example.com", "Admin", "ADMIN", true,
+        return new UserResponse(1L, "admin", "admin@example.com", "Admin", "ADMIN", "ACTIVE", true,
                 LocalDateTime.now());
     }
 
