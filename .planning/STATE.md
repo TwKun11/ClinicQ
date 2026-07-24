@@ -51,3 +51,4 @@ Phase 1 should clarify verification blockers and decide whether to fix the Maven
 | 20260724-admin-doctors | Build admin doctor management UI | 2026-07-24 | uncommitted | [20260724-admin-doctor-management-ui](./quick/20260724-admin-doctor-management-ui/) |
 | 20260724-admin-dashboard | Build admin dashboard UI and seed admin account | 2026-07-24 | uncommitted | [20260724-admin-dashboard-ui-seed](./quick/20260724-admin-dashboard-ui-seed/) |
 | 20260724-admin-schedules | Build admin schedule management UI | 2026-07-24 | uncommitted | [20260724-admin-schedule-management-ui](./quick/20260724-admin-schedule-management-ui/) |
+| 20260724-admin-queues | Build admin queue tracking UI | 2026-07-24 | uncommitted | [20260724-admin-queue-tracking-ui](./quick/20260724-admin-queue-tracking-ui/) |
