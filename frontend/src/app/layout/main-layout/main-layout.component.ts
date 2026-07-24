@@ -42,6 +42,10 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-icon matListItemIcon>calendar_month</mat-icon>
               <span matListItemTitle>Quản lý lịch khám</span>
             </a>
+            <a mat-list-item routerLink="/queues" routerLinkActive="active">
+              <mat-icon matListItemIcon>queue</mat-icon>
+              <span matListItemTitle>Theo dõi hàng đợi</span>
+            </a>
           }
           @if (authService.canUseChangePassword()) {
             <a mat-list-item routerLink="/change-password" routerLinkActive="active">

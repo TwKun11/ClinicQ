@@ -58,6 +58,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/schedules/schedule-management.component').then(m => m.ScheduleManagementComponent)
       },
       {
+        path: 'queues',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/queues/queue-tracking.component').then(m => m.QueueTrackingComponent)
+      },
+      {
         path: 'change-password',
         canActivate: [userStaffGuard],
         loadComponent: () => import('./features/auth/change-password/change-password.component').then(m => m.ChangePasswordComponent)
